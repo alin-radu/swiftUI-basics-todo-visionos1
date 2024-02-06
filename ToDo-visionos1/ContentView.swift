@@ -1,26 +1,45 @@
-//
-//  ContentView.swift
-//  ToDo-visionos1
-//
-//  Created by Alin RADU on 06.02.2024.
-//
-
 import SwiftUI
-import RealityKit
-import RealityKitContent
+import SwiftData
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Model3D(named: "Scene", bundle: realityKitContentBundle)
-                .padding(.bottom, 50)
+    @Environment(\.modelContext) private var modelContext
+    
+    @Query private var todolists: [TodoList]
+    @State private var selectedTodoList: TodoList? = nil
 
-            Text("Hello, world!")
+    @State private var showAddListAlert: Bool = false
+    @State private var newListTitle: String = ""
+
+    var body: some View {
+        NavigationSplitView {
+            List(todolists) { list in
+                Button(list.title) {
+                    selectedTodoList = list
+                }
+            }
+            .navigationTitle("Todo List")
+            .toolbar {
+                Button("Add") {
+                    showAddListAlert.toggle()
+                }
+            }
+        } detail: {
+            if let selectedTodoList = selectedTodoList {
+                TodoListView(list: selectedTodoList)
+            }
         }
-        .padding()
+        .alert("Add Todo List", isPresented: $showAddListAlert) {
+            TextField("Todo List Title", text: $newListTitle)
+            Button("Cancel", role: .cancel, action: {})
+            Button("Create") {
+                let list = TodoList(title: newListTitle)
+                modelContext.insert(list)
+            }
+        }
     }
 }
 
 #Preview(windowStyle: .automatic) {
     ContentView()
+        .modelContainer(for: TodoList.self)
 }
